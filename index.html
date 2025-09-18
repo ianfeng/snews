@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体育新闻</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .date-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .date-input-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        #date-input {
+            padding: 12px 15px 12px 15px;
+            border: 2px solid #4a69bd;
+            border-radius: 6px;
+            font-size: 16px;
+            width: 180px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #date-input:focus {
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
+        }
+        
+        .calendar-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4a69bd;
+            pointer-events: none;
+        }
+        
+        #fetch-data {
+            padding: 12px 24px;
+            background-color: #4a69bd;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #fetch-data:hover {
+            background-color: #3c5aa8;
+        }
+        
+        #fetch-data:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #4a69bd;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .category {
+            margin-bottom: 40px;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .category-header {
+            background-color: #4a69bd;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .item-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .items-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: white;
+        }
+        
+        .item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .brief {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
+            color: white;
+            font-weight: bold;
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 12px;
+            font-size: 16px;
+            z-index: 2;
+            max-height: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        
+        .image-container {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        .item-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        
+        .item:hover .item-image {
+            transform: scale(1.05);
+        }
+        
+        .item-info {
+            padding: 15px;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .item-time {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .item-length {
+            color: #4a69bd;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #e53e3e;
+            background-color: #fed7d7;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .items-container {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .category-header {
+                font-size: 1.3rem;
+            }
+            
+            .date-selector {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>体育新闻</h1>
+            <p>选择日期查看当天体育新闻</p>
+        </header>
+        
+        <div class="date-selector">
+            <div class="date-input-container">
+                <input type="date" id="date-input" value="2024-11-23">
+                <!--i class="fas fa-calendar-alt calendar-icon"></i-->
+            </div>
+            <button id="fetch-data">获取视频数据</button>
+        </div>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>正在加载数据，请稍候...</p>
+        </div>
+        
+        <div id="content">
+            <div class="no-data">请选择日期并点击"获取视频数据"按钮</div>
+        </div>
+        
+        <footer>
+            <p>© 2025 CNTV | 共 <span id="total-count">0</span> 个项目</p>
+        </footer>
+    </div>
+
+    <script>
+        // 格式化时长，去除前导的"00:"
+        function formatLength(length) {
+            if (!length) return "未知时长";
+            
+            // 如果以"00:"开头，则去掉
+            if (length.startsWith("00:")) {
+                return length.substring(3);
+            }
+            
+            return length;
+        }
+
+        // 解析标题中的分类信息
+        function getCategoryFromTitle(title) {
+            const match = title.match(/\[(.*?)\]/);
+            return match ? match[1] : "未分类";
+        }
+
+        // 按分类组织数据
+        function organizeDataByCategory(data) {
+            const categories = {};
+            
+            data.forEach(item => {
+                const category = getCategoryFromTitle(item.title);
+                
+                if (!categories[category]) {
+                    categories[category] = [];
+                }
+                
+                categories[category].push(item);
+            });
+            
+            return categories;
+        }
+
+        // 生成HTML内容
+        function generateContent(categories, total) {
+            const contentDiv = document.getElementById('content');
+            
+            // 更新总项目数
+            document.getElementById('total-count').textContent = total;
+            
+            // 如果没有数据
+            if (!categories || Object.keys(categories).length === 0) {
+                contentDiv.innerHTML = '<div class="no-data">没有找到相关视频数据</div>';
+                return;
+            }
+            
+            contentDiv.innerHTML = '';
+            
+            // 为每个分类创建区域
+            for (const [category, items] of Object.entries(categories)) {
+                const categorySection = document.createElement('div');
+                categorySection.className = 'category';
+                
+                const categoryHeader = document.createElement('div');
+                categoryHeader.className = 'category-header';
+                categoryHeader.innerHTML = `
+                    <span>${category}</span>
+                    <span class="item-count">${items.length}个视频</span>
+                `;
+                
+                const itemsContainer = document.createElement('div');
+                itemsContainer.className = 'items-container';
+                
+                // 为每个项目创建卡片
+                items.forEach(item => {
+                    const itemCard = document.createElement('a');
+                    itemCard.href = item.url;
+                    itemCard.target = '_blank';
+                    itemCard.className = 'item';
+                    
+                    itemCard.innerHTML = `
+                        <!--div class="brief">${item.brief}</div-->
+                        <div class="image-container">
+                            <img src="${item.image}" alt="${item.title}" class="item-image" onerror="this.src='https://placehold.co/400x200?text=图片加载失败'">
+                        </div>
+                        <div class="item-info">
+                            <div class="item-title">${item.title} (${formatLength(item.length)})</div>
+                            <!--div class="item-time">${item.time}</div>
+                            <div class="item-length">时长: </div-->
+                        </div>
+                    `;
+                    
+                    itemsContainer.appendChild(itemCard);
+                });
+                
+                categorySection.appendChild(categoryHeader);
+                categorySection.appendChild(itemsContainer);
+                contentDiv.appendChild(categorySection);
+            }
+        }
+
+        // 从日期对象生成API所需的日期格式（YYYYMMDD）
+        function formatDateForAPI(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        //use jsonp
+        function fetchDataJsonp(date) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_callback_' + Date.now();
+                const script = document.createElement('script');
+                
+                window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve(data);
+                };
+            
+                script.src = `https://api.cntv.cn/NewVideo/getVideoListByColumn?id=TOPC1451551258388672&n=100&sort=desc&p=1&bd=${date}&mode=2&serviceId=tvcctv&callback=${callbackName}`;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        }        
+
+        // 获取数据
+        async function fetchData() {
+            const dateInput = document.getElementById('date-input');
+            const fetchButton = document.getElementById('fetch-data');
+            const loading = document.querySelector('.loading');
+            const contentDiv = document.getElementById('content');
+            
+            const selectedDate = new Date(dateInput.value);
+            const apiDate = formatDateForAPI(selectedDate);
+            
+            // 显示加载状态
+            fetchButton.disabled = true;
+            loading.style.display = 'block';
+            contentDiv.innerHTML = '';
+            
+            try {
+                const jsonData = await fetchDataJsonp(apiDate);
+                
+                if (jsonData && jsonData.data && jsonData.data.list) {
+                    const categorizedData = organizeDataByCategory(jsonData.data.list);
+                    generateContent(categorizedData, jsonData.data.total);
+                } else {
+                    throw new Error('API返回的数据格式不正确');
+                }
+            } catch (error) {
+                console.error('获取数据失败:', error);
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h3>获取数据失败</h3>
+                        <p>${error.message || '请检查网络连接或稍后再试'}</p>
+                    </div>
+                `;
+            } finally {
+                // 隐藏加载状态
+                fetchButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', () => {
+            // 设置默认日期为今天
+            const today = new Date();
+            const formattedToday = today.toISOString().split('T')[0];
+            document.getElementById('date-input').value = formattedToday;
+            
+            // 添加事件监听器
+            document.getElementById('fetch-data').addEventListener('click', fetchData);
+            
+            // 也可以添加日期变化时自动获取数据
+            document.getElementById('date-input').addEventListener('change', fetchData);
+        });
+    </script>
+</body>
+</html>
